@@ -63,7 +63,13 @@ export async function POST(request: NextRequest) {
     return fail(request, json, "User ID and password are required", 400, "required");
   }
 
-  const user = await findUserByEmail(email);
+  let user;
+  try {
+    user = await findUserByEmail(email);
+  } catch (error) {
+    console.error("Login user lookup failed", error);
+    return fail(request, json, "Login service is temporarily unavailable", 503, "service");
+  }
   if (!user || user.status !== "active") {
     return fail(request, json, "Invalid user ID or password", 401, "invalid");
   }
@@ -74,12 +80,18 @@ export async function POST(request: NextRequest) {
   }
 
   clearLoginAttempts(ip);
-  const token = await createSessionCookieValue({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-  });
+  let token: string;
+  try {
+    token = await createSessionCookieValue({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    });
+  } catch (error) {
+    console.error("Login session creation failed", error);
+    return fail(request, json, "Login service is temporarily unavailable", 503, "service");
+  }
 
   if (json) {
     const response = NextResponse.json({
