@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { INLINE_VIEW_EXTENSIONS, INLINE_VIEW_TYPES } from "@/lib/constants";
-import { findDocumentById } from "@/lib/store";
+import { findDocumentById, verifyDocumentPassword } from "@/lib/store";
 import { jsonError } from "@/lib/serialize";
 import { extensionOf, isTextLikeFile, readPrivateFile } from "@/lib/storage";
 
@@ -14,13 +14,26 @@ function contentDisposition(inline: boolean, fileName: string) {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  const { error } = await requireUser();
+  const { user, error } = await requireUser();
   if (error) return error;
 
   const { id } = await context.params;
   const doc = await findDocumentById(id);
   if (!doc) {
     return jsonError("Document not found", 404);
+  }
+
+  if (doc.password_hash) {
+    const providedPassword =
+      request.nextUrl.searchParams.get("password") ||
+      request.headers.get("x-file-password");
+    if (!providedPassword) {
+      return jsonError("This file is password protected. Password required.", 401);
+    }
+    const match = await verifyDocumentPassword(id, providedPassword);
+    if (!match) {
+      return jsonError("Incorrect password for this file", 401);
+    }
   }
 
   const dispositionParam = request.nextUrl.searchParams.get("disposition");

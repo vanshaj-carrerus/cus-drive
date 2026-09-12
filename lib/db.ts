@@ -31,7 +31,17 @@ export async function connectMongo() {
   }
 
   if (!cache.promise) {
-    cache.promise = mongoose.connect(uri).then((m) => m);
+    cache.promise = mongoose
+      .connect(uri, {
+        bufferCommands: false,
+        maxPoolSize: 5,
+        serverSelectionTimeoutMS: 8000,
+      })
+      .then((m) => m)
+      .catch((error) => {
+        cache.promise = null;
+        throw error;
+      });
   }
 
   cache.conn = await cache.promise;

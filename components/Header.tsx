@@ -43,6 +43,16 @@ export default function Header({ user }: HeaderProps) {
           >
             My Drive
           </Link>
+          <Link
+            href="/notes"
+            className={`rounded-full px-3 py-1.5 text-sm ${
+              pathname === "/notes"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-secondary hover:bg-background"
+            }`}
+          >
+            Notes
+          </Link>
           {user.role === "admin" && (
             <Link
               href="/users"

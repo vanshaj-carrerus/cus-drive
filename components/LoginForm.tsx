@@ -2,6 +2,7 @@ const ERRORS: Record<string, string> = {
   invalid: "Invalid user ID or password",
   required: "User ID and password are required",
   rate: "Too many login attempts. Try again later.",
+  server: "Could not sign in. Add MONGODB_URI and AUTH_SECRET in Vercel, then redeploy.",
 };
 
 export default function LoginForm({ errorCode }: { errorCode?: string }) {

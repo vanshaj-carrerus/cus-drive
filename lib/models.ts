@@ -1,8 +1,8 @@
 import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
 
 function modelOf<T>(name: string, schema: Schema): Model<T> {
-  if (mongoose.models[name]) {
-    mongoose.deleteModel(name);
+  if (mongoose.models && mongoose.models[name]) {
+    delete (mongoose.models as Record<string, unknown>)[name];
   }
   return mongoose.model<T>(name, schema);
 }
@@ -36,6 +36,7 @@ const folderSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
     parent_id: { type: Schema.Types.ObjectId, ref: "Folder", default: null },
+    password_hash: { type: String, default: null },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
@@ -62,6 +63,7 @@ const documentSchema = new Schema(
     folder_id: { type: Schema.Types.ObjectId, ref: "Folder", default: null },
     uploaded_by: { type: Schema.Types.ObjectId, ref: "User", required: false },
     uploaded_by_name: { type: String, required: false, default: "" },
+    password_hash: { type: String, default: null },
   },
   { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
 );
@@ -76,3 +78,26 @@ export const DocumentModel: Model<DocumentDoc> = modelOf<DocumentDoc>(
   "Document",
   documentSchema
 );
+
+const noteSchema = new Schema(
+  {
+    title: { type: String, default: "", trim: true },
+    content: { type: String, required: true },
+    color: { type: String, default: "default" },
+    category: { type: String, default: "General" },
+    pinned: { type: Boolean, default: false },
+    drive_doc_id: { type: Schema.Types.ObjectId, ref: "Document", default: null },
+    user_id: { type: Schema.Types.ObjectId, ref: "User", required: false },
+    author_name: { type: String, default: "" },
+  },
+  { timestamps: { createdAt: "created_at", updatedAt: "updated_at" } }
+);
+
+export type NoteDoc = InferSchemaType<typeof noteSchema> & {
+  _id: mongoose.Types.ObjectId;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export const NoteModel: Model<NoteDoc> = modelOf<NoteDoc>("Note", noteSchema);
+
